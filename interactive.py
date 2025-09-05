@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from bst import BST
+from avl import AVLTree 
 from view import BSTVisualizer
 import random
 
@@ -11,7 +12,7 @@ class BSTInteractiveApp:
         self.root = root
         self.root.title("Interactive BST")
 
-        self.canvas = tk.Canvas(root, width=800, height=600, bg='white')
+        self.canvas = tk.Canvas(root, width=800, height=600, bg='pink')
         self.canvas.pack()
 
         # Input frame
@@ -47,6 +48,13 @@ class BSTInteractiveApp:
         )
         self.clear_button.pack(side=tk.LEFT, padx=5)
 
+        self.avl_button = tk.Button(
+            self.frame,
+            text="AVL",
+            command=self.transform_to_avl
+        )
+        self.avl_button.pack(side=tk.LEFT, padx=5)
+
         # Visualizer
         self.visualizer = BSTVisualizer(self.bst, self.canvas)
 
@@ -71,10 +79,8 @@ class BSTInteractiveApp:
         if not self.bst.contains(val):
             messagebox.showinfo("Not found", f"Value {val} is not in the tree")
         else:
-            # Highlight the node to remove
             self.visualizer.highlight_value = val
             self.visualizer.redraw()
-            # Wait 500ms before actual removal
             self.root.after(500, lambda: self._do_remove(val))
         self.entry.delete(0, tk.END)
 
@@ -84,7 +90,7 @@ class BSTInteractiveApp:
         self.visualizer.redraw()
 
     # ----------------- Random insert -----------------
-    def insert_random_numbers_animated(self, count=10, lower=1, upper=100, delay=800):
+    def insert_random_numbers_animated(self, count=10, lower=1, upper=100, delay=500):
         numbers = [random.randint(lower, upper) for _ in range(count)]
 
         def insert_next(i):
@@ -101,4 +107,44 @@ class BSTInteractiveApp:
         self.visualizer.bst = self.bst
         self.visualizer.redraw()
 
+    # ----------------- Transform to AVL -----------------
+    def transform_to_avl(self):
+        from avl import get_balance, rotate_left, rotate_right, update_height
 
+        def redraw_callback():
+            self.visualizer.redraw()
+            self.root.update()
+            # small delay for animation
+            self.root.after(400)
+
+        def balance_post_order(node):
+            if node is None:
+                return None
+
+            # First, balance children
+            node.left = balance_post_order(node.left)
+            node.right = balance_post_order(node.right)
+
+            # Update height
+            update_height(node)
+
+            # Check balance
+            balance = get_balance(node)
+
+            # Left heavy
+            if balance > 1:
+                if get_balance(node.left) < 0:
+                    node.left = rotate_left(node.left, redraw_callback)
+                node = rotate_right(node, redraw_callback)
+
+            # Right heavy
+            elif balance < -1:
+                if get_balance(node.right) > 0:
+                    node.right = rotate_right(node.right, redraw_callback)
+                node = rotate_left(node, redraw_callback)
+
+            redraw_callback()  # redraw after balancing this node
+            return node
+
+        # Start balancing from the root
+        self.bst.root = balance_post_order(self.bst.root)

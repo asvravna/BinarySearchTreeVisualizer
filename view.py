@@ -1,4 +1,6 @@
 import tkinter as tk
+from avl import AVLTree  # assuming you have avl.py with AVLTree
+
 
 class BSTVisualizer:
     def __init__(self, bst, root):
@@ -24,3 +26,18 @@ class BSTVisualizer:
             if node.right:
                 self.canvas.create_line(x, y+15, x+dx, y+60-15)
                 self.draw_tree(node.right, x+dx, y+60, dx/2)
+
+    def transform_to_avl(self):
+        avl = AVLTree()
+
+        def inorder(node):
+            if node:
+                inorder(node.left)
+                avl.insert(node.value)
+                inorder(node.right)
+
+        inorder(self.bst.root)
+
+        # swap out the bst and redraw
+        self.bst = avl
+        self.redraw()

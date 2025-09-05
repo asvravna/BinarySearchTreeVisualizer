@@ -75,3 +75,4 @@ class BST:
     # ---------- CONTAINS (bool) ----------
     def contains(self, value):
         return self.search(value) is not None
+
